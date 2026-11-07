@@ -15,6 +15,7 @@ from common import (
     flutter_command,
     flutter_pub_get,
     generate_dart_proxy_artifacts,
+    prepare_plugin_assets,
     read_properties,
     require_command,
     run,
@@ -122,6 +123,7 @@ def main() -> int:
     flutter = flutter_command()
     configure_android_flutter_sdk(flutter)
     require_command("cargo")
+    prepare_plugin_assets()
     if not args.skip_proxy_generation:
         generate_dart_proxy_artifacts()
     flutter_pub_get(enforce_lockfile=args.enforce_lockfile)
