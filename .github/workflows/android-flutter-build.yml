@@ -70,6 +70,7 @@ jobs:
     runs-on: windows-2025
     timeout-minutes: 180
     env:
+      PYTHONUTF8: '1'
       RUSTFLAGS: -Awarnings
       RUST_TOOLCHAIN_VERSION: 1.95.0
       FVM_VERSION: 4.3.0
