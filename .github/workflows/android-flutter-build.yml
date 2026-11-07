@@ -170,10 +170,14 @@ jobs:
 
       - name: Install TypeScript and pnpm for plugin packaging
         shell: pwsh
+        env:
+          COREPACK_ENABLE_STRICT: '0'
+          COREPACK_ENABLE_DOWNLOAD_PROMPT: '0'
         run: |
           npm install --prefix .ci-tools/typescript --no-audit --no-fund typescript@5.9.3
           corepack enable pnpm
-          corepack prepare pnpm@10.19.1 --activate
+          corepack prepare pnpm@10.7.0 --activate
+          pnpm --version
 
       - name: Check build environment
         shell: pwsh
