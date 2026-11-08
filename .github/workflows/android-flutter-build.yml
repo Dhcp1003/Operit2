@@ -65,8 +65,52 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
+  build-android-v8:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 150
+    env:
+      PYTHONUTF8: '1'
+      OPERIT_ANDROID_V8_NDK: /usr/local/lib/android/sdk/ndk/28.2.13676358
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install V8 build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bison flex gperf
+      - name: Install LLVM 21 (libclang for V8 bindings)
+        run: |
+          wget -q https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 21
+          sudo apt-get install -y libclang-21-dev
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: 1.95.0
+          targets: aarch64-linux-android
+      - name: Install pinned Android NDK 28.2.13676358
+        run: |
+          yes | sudo "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+          sudo "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "ndk;28.2.13676358"
+          test -d "$OPERIT_ANDROID_V8_NDK"
+      - name: Build V8 static library for Android arm64
+        env:
+          OPERIT_ANDROID_V8_JOBS: '3'
+        run: |
+          python3 tools/build_scripts/prepare_android_v8.py \
+            --target aarch64-linux-android \
+            --env-file /tmp/v8.env
+      - name: Upload source-built Android V8
+        uses: actions/upload-artifact@v4
+        with:
+          name: operit2-android-v8-${{ github.sha }}
+          path: tools/release/work/android-v8/
+          if-no-files-found: error
+          retention-days: 1
+
   build-android:
-    needs: build-android-runtime
+    needs: [build-android-runtime, build-android-v8]
     runs-on: windows-2025
     timeout-minutes: 180
     env:
@@ -168,6 +212,12 @@ jobs:
         with:
           path: tools/release/work/android-v8
           key: ${{ runner.os }}-${{ runner.arch }}-android-v8-${{ hashFiles('tools/build_scripts/prepare_android_v8.py', 'apps/flutter/native/operit-flutter-bridge/Cargo.lock') }}
+
+      - name: Restore Linux-built Android V8 artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: operit2-android-v8-${{ github.sha }}
+          path: tools/release/work/android-v8
 
       - name: Install TypeScript and pnpm for plugin packaging
         shell: pwsh
