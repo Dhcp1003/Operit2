@@ -101,11 +101,19 @@ jobs:
           python3 tools/build_scripts/prepare_android_v8.py \
             --target aarch64-linux-android \
             --env-file /tmp/v8.env
+      - name: Stage source-built Android V8 artifacts
+        run: |
+          source /tmp/v8.env
+          TARGET_DIR=$(dirname "$RUSTY_V8_ARCHIVE")
+          V8_VERSION=$(basename "$(dirname "$TARGET_DIR")")
+          mkdir -p "tmp/v8-stage/$V8_VERSION"
+          cp -a "$TARGET_DIR" "tmp/v8-stage/$V8_VERSION/"
+          find tmp/v8-stage -type f -exec ls -la {} \;
       - name: Upload source-built Android V8
         uses: actions/upload-artifact@v4
         with:
           name: operit2-android-v8-${{ github.sha }}
-          path: tools/release/work/android-v8/
+          path: tmp/v8-stage/
           if-no-files-found: error
           retention-days: 1
 
