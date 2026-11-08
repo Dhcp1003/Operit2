@@ -379,7 +379,7 @@ def find_libclang():
         if not directory or not (directory / "libclang.dll").is_file():
             raise RuntimeError("Set OPERIT_LIBCLANG_DIR to the directory containing libclang.dll (21.1+)")
         return directory
-    pattern = "libclang.so*"
+    pattern = "libclang*.so*"
     if sys.platform == "darwin":
         llvm = find_host_clang()
         candidates = [llvm / "lib"]
@@ -391,7 +391,10 @@ def find_libclang():
     for directory in candidates:
         libraries += sorted(directory.glob(pattern))
     for library in libraries:
-        match = re.search(r"libclang\.so\.(\d+)", library.name)
+        # Accept both libclang.so.21 (upstream LLVM) and libclang-21.so.21
+        # (Debian/Ubuntu) library layouts; bindgen only needs the directory.
+        match = (re.search(r"libclang\.so\.(\d+)", library.name)
+                 or re.search(r"libclang-(\d+)\.so", library.name))
         if match and int(match.group(1)) >= 21:
             return library.parent
     if sys.platform == "darwin" and libraries:
